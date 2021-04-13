@@ -105,23 +105,319 @@ flow_test <- wellbeing_02$FLOW[-train_flow]
 ```
 
 
-## Models of high-stress and flow
+## Train models using mlr package
 
+Train a model to predict whether a person falls into high-stress category:
+```{r}
+set.seed(5)
+hstress_task <- makeClassifTask(wellbeing_01[train_stress,],
+                                     target = "HI_STRESS", id = 'hstress')
+mod_hstress <- train(mlr::makeLearner(cl = 'classif.randomForest', id = 'hstress-rf',
+                                           predict.type = 'prob'),
+                          hstress_task)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+pred_hstress <- Predictor$new(mod_hstress, data = wellbeing_01[train_stress,],
+                                   class = "1")
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+Train a model to predict hours of flow that a person experience:
+```{r}
+set.seed(42)
+flow_task <- makeRegrTask(data = wellbeing_02[train_flow,], target = "FLOW")
+mod_flow <- train(makeLearner(cl = 'regr.randomForest', id = 'flow-rf'), flow_task)
+pred_flow <- Predictor$new(mod_flow, wellbeing_02[train_flow,])
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Partial dependence plot (PDP)
+
+PDP for high-stress prediction model and features of weekly mediation and lost vacation.
+
+```{r}
+
+hstress_pdp_1 <- iml::FeatureEffect$new(pred_hstress, "WEEKLY_MEDITATION", method = "pdp")$plot() +
+  scale_y_continuous("Predicted high-stress probability") +
+  scale_x_continuous("Weekly meditation (hours)")
+
+hstress_pdp_2 <- iml::FeatureEffect$new(pred_hstress, "LOST_VACATION", method = "pdp")$plot() +
+  scale_y_continuous("Predicted high-stress probability") +
+  scale_x_continuous("Lost vacation per year (days)")
+
+# plot pdp
+hstress_pdp_1
+
+hstress_pdp_2
+
+```
+
+PDP for flow prediction model and features of time for passion and achievement.
+
+```{r}
+
+flow_pdp_iml_1 <- FeatureEffect$new(pred_flow, feature = "TIME_FOR_PASSION",
+                                         method = "pdp")$plot() +
+  scale_x_continuous("Time for passion (hours)") +
+  scale_y_continuous("Predicted daily flow (hours)")
+
+flow_pdp_iml_2 <- FeatureEffect$new(pred_flow, feature = "ACHIEVEMENT",
+                                         method = "pdp")$plot() +
+  scale_x_continuous("Number of achievements (last 12 months)") +
+  scale_y_continuous("Predicted daily flow (hours)")
+
+# plot
+
+flow_pdp_iml_1 
+
+flow_pdp_iml_2
+
+```
+
+
+## Individual Conditional Expectation (ICE)
+
+ICE for high-stress prediction model and features of weekly mediation and lost vacation.
+
+```{r}
+
+hstress_ice_1 <- FeatureEffect$new(pred_hstress, "WEEKLY_MEDITATION", method = "ice")$plot()
+hstress_ice_2 <- FeatureEffect$new(pred_hstress, "LOST_VACATION", method = "ice")$plot()
+
+# plot
+hstress_ice_1
+hstress_ice_2
+
+```
+
+Because the large numbers of observations, the ICE plots above are difficult to discern. Centered ICE plots of the model are:
+
+```{r}
+hstress_ice_1_centered <- FeatureEffect$new(pred_hstress, "WEEKLY_MEDITATION",
+                                                 center.at = min(wellbeing_01$WEEKLY_MEDITATION[train_stress]),
+                                                 method = "pdp+ice")$plot()
+
+hstress_ice_2_centered <- FeatureEffect$new(pred_hstress, "LOST_VACATION",
+                                                 center.at = min(wellbeing_01$LOST_VACATION[train_stress]),
+                                                 method = "pdp+ice")$plot()
+
+# plot
+hstress_ice_1_centered +
+  scale_y_continuous("High-stress prob. difference to 0 hrs weekly meditation")
+
+hstress_ice_2_centered +
+  scale_y_continuous("High-stress prob. difference to no lost vacation")
+
+```
+
+ICE for flow prediction model and features of time for passion and achievement.
+
+```{r}
+
+p1 <- FeatureEffect$new(pred_flow, "TIME_FOR_PASSION", method = "ice")$plot() +
+  scale_x_continuous("Time for passion (hour)") +
+  scale_y_continuous("Predicted flow experience (hours)")
+
+p2 <- FeatureEffect$new(pred_flow, "ACHIEVEMENT", method = "ice")$plot() +
+  scale_x_continuous("Number of achievements (last 12 months)") +
+  scale_y_continuous("Predicted flow experience (hours)")
+
+# plot
+p1
+p2
+
+```
+
+Centered ICE for flow prediction model:
+```{r}
+
+flow_ice_centered_1_iml <- FeatureEffect$new(pred_flow, feature = "TIME_FOR_PASSION",
+                                                  center.at = min(wellbeing_02$TIME_FOR_PASSION[train_flow]),
+                                                  method = "pdp+ice")$plot()
+
+flow_ice_centered_2_iml <- FeatureEffect$new(pred_flow, feature = "ACHIEVEMENT",
+                                                  center.at = min(wellbeing_02$ACHIEVEMENT[train_flow]),
+                                                  method = "pdp+ice")$plot() 
+
+# plot
+flow_ice_centered_1_iml
+flow_ice_centered_2_iml
+```
+
+
+## Accumulated Local Effects (ALE)
+
+ALE for high-stress prediction model and features of weekly mediation and lost vacation.
+
+```{r}
+
+hstress_ale_1 <- FeatureEffect$new(pred_hstress, "WEEKLY_MEDITATION", method = "ale")$plot() +
+  scale_y_continuous("ALE of high-stress") +
+  scale_x_continuous("Weekly meditation (hours)")
+
+hstress_ale_2 <- FeatureEffect$new(pred_hstress, "LOST_VACATION", method = "ale")$plot() +
+  scale_y_continuous("ALE of high-stress") +
+  scale_x_continuous("Lost vacation per year (days)")
+
+# plot
+hstress_ale_1
+hstress_ale_2
+
+```
+
+ALE for flow prediction model and features of time for passion and achievement.
+
+```{r}
+
+flow_ale_1 <- FeatureEffect$new(pred_flow, feature = "TIME_FOR_PASSION",
+                                     method = "ale")$plot() +
+  scale_x_continuous("Time for passion (hours)") +
+  scale_y_continuous("ALE of flow experience")
+
+flow_ale_2 <- FeatureEffect$new(pred_flow, feature = "ACHIEVEMENT",
+                                     method = "ale")$plot() +
+  scale_x_continuous("Number of achievements (last 12 months)") +
+  scale_y_continuous("ALE of flow experience")
+
+# plot
+flow_ale_1
+flow_ale_1
+
+```
+
+## Permutation Feature Importance
+
+Feature importance for high-stress prediction model.
+
+```{r}
+imp_hstress_ce <- FeatureImp$new(pred_hstress, loss = "ce")
+plot(imp_hstress_ce)
+```
+
+Feature importance for flow prediction model. 
+
+```{r}
+imp_flow_mae <- FeatureImp$new(pred_flow, loss ="mae")
+plot(imp_flow_mae)
+
+```
+
+## Local Surrogate (LIME)
+
+At the moment, I have not been able applying LIME using the `iml` package. Therefore temporarily, I resort to `lime` package. So far, I've only managed to implement LIME to model flow experience. 
+
+Below a flow model is trained using boosting from `gbm` package. The reference that I used to interpret a gbm model using the `lime` package is [here](http://uc-r.github.io/gbm_regression).
+
+```{r}
+
+# train model
+set.seed(1)
+boost_flow <- gbm(FLOW~., data = wellbeing_02[train_flow,], distribution = "poisson",
+                  n.trees = 1000, interaction.depth = 2,
+                  cv.folds = 10)
+
+# create helper functions
+model_type.gbm <- function(x, ...) {
+  return("classification")
+}
+
+predict_model.gbm <- function(x, newdata, ...) {
+  pred <- predict(x, newdata, n.trees = x$n.trees)
+  return(as.data.frame(pred))
+}
+
+# LIME for two instances in the test dataset
+
+local_obs <- wellbeing_02_test[4:5,] # fourth and fifth instances
+
+explainer_flow <- lime(wellbeing_02[train_flow,], boost_flow)
+explanation_flow <- explain(local_obs, explainer_flow, n_labels = 1, n_features = 5)
+plot_features(explanation_flow) + ggtitle("LIME")
+
+```
+
+## Train models using caret package
+
+Train a model to predict whether a person falls into high-stress category:
+
+```{r}
+
+# prepare input for caret
+wellbeing_01_train_features <- wellbeing_01[train_stress,] %>% select(-HI_STRESS)
+wellbeing_01_train_target <- as.data.frame(wellbeing_01[train_stress,])[,"HI_STRESS"]
+ntree <- 100
+
+# train
+model_rf_stress <- train(x = as.data.frame(wellbeing_01_train_features),
+                                y = wellbeing_01_train_target,
+                                method = 'rf', ntree = ntree, maximize = FALSE)
+
+```
+
+Train a model to predict hours of flow that a person experience:
+
+```{r}
+
+# prepare input for caret
+ntree <- 50
+wellbeing_02_train_features <- wellbeing_02[train_flow,] %>%
+  select(-FLOW)
+wellbeing_02_train_target <- as.data.frame(wellbeing_02[train_flow,])[,"FLOW"]
+
+# train
+model_rf <- train(x = as.data.frame(wellbeing_02_train_features),
+                      y = wellbeing_02_train_target,
+                      method = 'rf', ntree=ntree, maximise = FALSE)
+
+```
+
+## Shapley Values
+
+Shapley values to analyze the prediction of a random forest model predicting whether a person falls into high-stress category.
+
+```{r}
+
+# create prediction from the random forest model generated using caret (see chuck above)
+pred_hstress_rf <- Predictor$new(model_rf_stress, data = wellbeing_01_train_features,
+                                      class = "1", type = "prob")
+
+
+# generate shapley values for an indiviual in the dataset 
+instance_indices <- 100 # the 100th individual
+x.interest <- wellbeing_01_train_features[instance_indices,]
+
+avg_prediction_hstress <-  mean(predict(model_rf_stress, type = 'prob')[,'1'])
+actual_prediction_hstress <-  predict(model_rf_stress, newdata = x.interest, type = 'prob')['1']
+diff_prediction_hstress  <-  actual_prediction_hstress - avg_prediction_hstress
+
+hstress_shapley_1 <-  Shapley$new(pred_hstress_rf, x.interest = x.interest, sample.size = 100)
+
+# plot
+plot(hstress_shapley_1)
+
+```
+
+Shapley values to analyze the prediction of a random forest model predicting hours of flow that a person experience weekly.
+
+```{r}
+
+# create prediction from the random forest model generated using caret (see chuck above)
+predictor <- Predictor$new(model_rf, data = as.data.frame(wellbeing_02_train_features))
+
+# generate shapley values for an indiviual in the dataset 
+avg_prediction <-  mean(predict(model_rf))
+actual_prediction <-  predict(model_rf,
+                            newdata = as.data.frame(wellbeing_02_train_features)[instance_indices[2],])
+diff_prediction <-  actual_prediction - avg_prediction
+x.interest <-  as.data.frame(wellbeing_02_train_features)[instance_indices[2],]
+
+shapley_2 <-  Shapley$new(predictor, x.interest = x.interest)
+
+# plot
+plot_shapley_2 <- plot(shapley_2) + 
+  scale_y_continuous("Feature value contribution") +
+  scale_x_discrete("")
+
+plot_shapley_2 + 
+  ggtitle(sprintf("Actual prediction: %.2f\nAverage prediction: %.2f\nDifference: %.2f", 
+                  actual_prediction, avg_prediction, diff_prediction))
+
+```
+
