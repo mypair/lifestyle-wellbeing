@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This mini project is an attempt to interpret machine learning models on well-being, mostly with the `iml` package. Well-being measures that I focus on are: stress level and the experience of flow. In particular, models are trained to predict whether a person falls within high-stress or low-stress category, and to predict hours of flow that a person experience in a week. 
+This mini project is an attempt to interpret machine learning models on well-being, mostly with the `iml` package. Well-being measures that I focus on are: stress level and the experience of flow. Models are trained to predict whether a person falls within high-stress or low-stress category, and to predict hours of flow that a person experience in a week. 
 
 ## R packages
 
@@ -301,7 +301,7 @@ plot(imp_flow_mae)
 
 ## Local Surrogate (LIME)
 
-At the moment, I have not been able applying LIME using the `iml` package. Therefore temporarily, I resort to `lime` package. So far, I've only managed to implement LIME to model flow experience. 
+At the moment, I have not been able to apply LIME using the `iml` package. Therefore temporarily, I resort to `lime` package. So far, I've only managed to implement LIME to model flow experience. 
 
 Below a flow model is trained using boosting from `gbm` package. The reference that I used to interpret a gbm model using the `lime` package is [here](http://uc-r.github.io/gbm_regression).
 
