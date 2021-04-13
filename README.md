@@ -8,12 +8,12 @@ Data was obtained from Kaggle website, in particular [Lifestyle and Wellbeing da
 
 * Molnar's code on how to use `iml` package to interpret ML models following examples in his book is [here](https://github.com/christophM/interpretable-ml-book/tree/master/manuscript). In his code, Molnar uses `mlr` and `caret` package for modeling.
 
-* A post on using `iml` package for interpretation, and `h2o` package for modeling is [here](http://uc-r.github.io/iml-pkg#lime). A similar post is [here](https://www.r-bloggers.com/2018/08/iml-and-h2o-machine-learning-model-interpretability-and-feature-explanation/)
+* To use `iml` package for interpretation, and `h2o` package for modeling check [this post](http://uc-r.github.io/iml-pkg#lime). A similar post is [here](https://www.r-bloggers.com/2018/08/iml-and-h2o-machine-learning-model-interpretability-and-feature-explanation/).
 
-* A post on using `lime`, `vip`, and `pdp` package for interpretation, and `caret` and `h2o` for modeling is [here](http://uc-r.github.io/lime)
+* To use `lime`, `vip`, and `pdp` package for interpretation, and `caret` and `h2o` for modeling check [this post](http://uc-r.github.io/lime).
 
-* A post on using `DALEX` package for interpretation, and `h2o` for modeling is [here](http://uc-r.github.io/dalex)
+* To use `DALEX` package for interpretation, and `h2o` for modeling check [this post](http://uc-r.github.io/dalex).
 
-* A post on using `lime` and `pdp` package for interpretation, and `gbm`, `xboost`, and `h2o` package for modeling is [here](http://uc-r.github.io/gbm_regression).
+* To use `lime` and `pdp` package for interpretation, and `gbm`, `xboost`, and `h2o` package for modeling check [this post](http://uc-r.github.io/gbm_regression).
 
-* Chapter 16 in [Hands-on Machine Learning with R](https://bradleyboehmke.github.io/HOML/iml.html) book provides examples of using `pdp`, `vip`, `iml`, `DALEX`, and `lime` package for interpretation, and `h2o` and `xboost` package for modeling.
+* Chapter 16 in [Hands-on Machine Learning with R](https://bradleyboehmke.github.io/HOML/iml.html) book provides examples on using `pdp`, `vip`, `iml`, `DALEX`, and `lime` package for interpretation, and `h2o` and `xboost` package for modeling.
