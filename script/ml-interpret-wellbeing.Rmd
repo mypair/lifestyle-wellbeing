@@ -1,0 +1,127 @@
+---
+title: "Lifestyle and Well-being"
+author: "Shanti Agung"
+date: "4/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This mini project is an attempt to interpret machine learning models on well-being, mostly with the `iml` package. Well-being measures that I focus on are: stress level and the experience of flow. In particular, models are trained to predict whether a person falls within high-stress or low-stress category, and to predict hours of flow that a person experience in a week. 
+
+## R packages
+
+I use the following packages:
+
+```{r}
+
+# load required packages
+library(tidyverse)   # data import, transformation, and visualization
+library(lubridate)   # date wrangling
+library(gbm)         # machine learning modeling
+library(mlr)         # machine learning modeling
+library(caret)       # machine learning modeling
+library(iml)         # machine learning interpretation
+library(lime)        # machine learning interpretation
+
+```
+
+## Prepare dataset
+
+```{r}
+
+# upload dataset
+wellbeing <- read_csv("./data/Wellbeing_and_lifestyle_data_Kaggle.csv")
+
+# remove observation with missing values
+wellbeing <- na.omit(wellbeing) 
+
+# tidy variables
+wellbeing <- wellbeing %>% 
+  mutate(DATE = str_extract(Timestamp, pattern = "^\\d+/\\d+/\\d+")) %>% 
+  mutate(DATE = mdy(DATE))
+
+age_levels <- c("Less than 20", "21 to 35", "36 to 50", "51 or more")
+
+wellbeing <- wellbeing %>% 
+  mutate(AGE = factor(AGE, levels = age_levels)) %>% 
+  mutate(GENDER = factor(GENDER, levels = unique(GENDER)))
+
+# create new variables
+wellbeing <- wellbeing %>% 
+  mutate(HI_STRESS = if_else(DAILY_STRESS > 3, 1, 0)) %>% 
+  mutate(HI_STRESS = factor(HI_STRESS))
+
+wellbeing <- wellbeing %>%
+  mutate(YEAR = year(DATE)) %>%
+  mutate(MONTH = month(DATE,label = TRUE)) %>%
+  mutate(WEEK = wday(DATE, label = TRUE))
+
+```
+
+Because covid-19 pandemic affects our lifestyle and well-being in unusual ways, I use data prior to 2020.
+
+```{r}
+
+wellbeing <- wellbeing %>% 
+  filter(YEAR < 2020)
+
+dim(wellbeing)
+
+glimpse(wellbeing)
+```
+
+Preparation of training and test sets for predicting high-stress: 
+
+```{r}
+
+# subset data for high-stress
+wellbeing_01 <- wellbeing %>% 
+  select(-c(Timestamp, DAILY_STRESS, FLOW, DAILY_SHOUTING, WORK_LIFE_BALANCE_SCORE, DATE))
+
+# prepare train and test set for hi_stress
+set.seed(2)
+train_stress <- sample(1:nrow(wellbeing_01), nrow(wellbeing_01)/2)
+wellbeing_01_test <- wellbeing_01[-train_stress,]
+high_stress_test <- wellbeing_01$HI_STRESS[-train_stress]
+
+```
+
+Preparation of training and test sets for predicting flow experience: 
+
+```{r}
+
+# subset data for flow experience:
+wellbeing_02 <- wellbeing %>% 
+  select(-c(Timestamp, DAILY_STRESS, HI_STRESS, DAILY_SHOUTING, WORK_LIFE_BALANCE_SCORE, DATE))
+
+# prepare train and test set for flow
+set.seed(2)
+train_flow <- sample(1:nrow(wellbeing_02), nrow(wellbeing_02)/2)
+wellbeing_02_test <- wellbeing_02[-train_flow,]
+flow_test <- wellbeing_02$FLOW[-train_flow]
+```
+
+
+## Models of high-stress and flow
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
