@@ -383,10 +383,6 @@ pred_hstress_rf <- Predictor$new(model_rf_stress, data = wellbeing_01_train_feat
 instance_indices <- 100 # the 100th individual
 x.interest <- wellbeing_01_train_features[instance_indices,]
 
-avg_prediction_hstress <-  mean(predict(model_rf_stress, type = 'prob')[,'1'])
-actual_prediction_hstress <-  predict(model_rf_stress, newdata = x.interest, type = 'prob')['1']
-diff_prediction_hstress  <-  actual_prediction_hstress - avg_prediction_hstress
-
 hstress_shapley_1 <-  Shapley$new(pred_hstress_rf, x.interest = x.interest, sample.size = 100)
 
 # plot
@@ -401,7 +397,9 @@ Shapley values to analyze the prediction of a random forest model predicting hou
 # create prediction from the random forest model generated using caret (see chuck above)
 predictor <- Predictor$new(model_rf, data = as.data.frame(wellbeing_02_train_features))
 
-# generate shapley values for an indiviual in the dataset 
+# generate shapley values for individuals in the dataset
+instance_indices <- c(8, 32) # the 8th and 32nd person in the dataset
+
 avg_prediction <-  mean(predict(model_rf))
 actual_prediction <-  predict(model_rf,
                             newdata = as.data.frame(wellbeing_02_train_features)[instance_indices[2],])
